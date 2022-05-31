@@ -15,4 +15,11 @@ I'd like to also create some additional customization options for the look and f
 
 ## How to play
 
-For now, I don't have any ready to play versions, so you'll have to build the code yourself. Download the code, install the [.NET 6 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
+For now, I don't have any ready to play versions, so you'll have to build the code yourself.
+
+1. Download the code
+2. Install the [.NET 6 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) 
+3. Navigate to your download folder
+4. Run `dotnet build`
+5. Ensure that the code builds without error
+6. Use the command `dotnet run -- play classic` to start the application
