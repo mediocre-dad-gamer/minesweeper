@@ -1,4 +1,4 @@
-﻿using MineSweeper.Application;
+﻿using Minesweeper.Application;
 using Spectre.Console.Cli;
 
 var app = new CommandApp();

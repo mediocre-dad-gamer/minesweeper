@@ -1,4 +1,4 @@
-namespace MineSweeper;
+namespace Minesweeper;
 
 public class MinefieldColumn
 {

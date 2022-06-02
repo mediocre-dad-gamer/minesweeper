@@ -2,7 +2,7 @@ using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Rendering;
 
-namespace MineSweeper.Application;
+namespace Minesweeper.Application;
 
 public class MinesweeperCommand : Command<MinesweeperSettings>
 {
@@ -106,12 +106,9 @@ public class MinesweeperCommand : Command<MinesweeperSettings>
 
     private void RevealMines(Table table, MineField minefield)
     {
-        foreach (var mineCoordinate in minefield.MineIndexes)
+        foreach (var kvp in minefield.GetMineIndeces())
         {
-            foreach (var mineY in mineCoordinate.Value)
-            {
-                table.UpdateCell(mineCoordinate.Key, mineY, new Panel(RedCanvas()));
-            }
+            table.UpdateCell(kvp.Key, kvp.Value, new Panel(RedCanvas()));
         }
     }
 
@@ -122,7 +119,7 @@ public class MinesweeperCommand : Command<MinesweeperSettings>
             column.Alignment(Justify.Center);
         });
 
-        for (var i = 0; i < minefield.Columns.Count; i++)
+        for (var i = 0; i < minefield.ColumnCount; i++)
         {
             defaultCellValue.Add(new Panel(WhiteCanvas()));
             table.AddColumn(Constants.ALPHABET[i], column =>
@@ -131,11 +128,11 @@ public class MinesweeperCommand : Command<MinesweeperSettings>
             });
         }
 
-        foreach (var row in minefield.Rows)
+        for (var i = 1; i < minefield.RowCount + 1; i++)
         {
-            var index = (row.RowIndex + 1).ToString();
+            var index = i.ToString();
 
-            if (row.RowIndex + 1 < 10)
+            if (i < 10)
             {
                 index = $"0{index}";
             }
@@ -152,53 +149,9 @@ public class MinesweeperCommand : Command<MinesweeperSettings>
 
     private MineField BuildMineField(int width, int height, decimal percentOfMines)
     {
-        var minefield = new MineField();
-        for (var i = 0; i < width; i++)
-        {
-            minefield.Columns.Add(new MinefieldColumn(i));
-        }
-
-        for (var i = 0; i < height; i++)
-        {
-            minefield.Rows.Add(new MinefieldRow(i));
-        }
-
-        var numberOfMines = Math.Round(width * height * (percentOfMines / 100));
-        var random = new Random();
-
-        AddMines(width, height, minefield, numberOfMines, random);
+        var minefield = new MineField(width, height, percentOfMines);
 
         return minefield;
-    }
-
-    private void AddMines(int width, int height, MineField minefield, decimal numberOfMines, Random random)
-    {
-        while (minefield.MineIndexes.Values.SelectMany(v => v).Count() < numberOfMines)
-        {
-            var x = random.Next(0, height);
-            var y = random.Next(1, width + 1);
-
-            var existingX = minefield.MineIndexes.ContainsKey(x);
-            if (!existingX)
-            {
-                minefield.MineIndexes.Add(x, new List<int> {
-                    y
-                });
-                continue;
-            }
-            else
-            {
-                var existingList = minefield.MineIndexes[x];
-                if (existingList.Contains(y))
-                {
-                    continue;
-                }
-                else
-                {
-                    existingList.Add(y);
-                }
-            }
-        }
     }
 
     private Canvas SquareCanvas(Color color)

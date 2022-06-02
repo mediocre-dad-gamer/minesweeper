@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Spectre.Console.Cli;
 
-namespace MineSweeper.Application;
+namespace Minesweeper.Application;
 
 public class MinesweeperSettings : CommandSettings
 {

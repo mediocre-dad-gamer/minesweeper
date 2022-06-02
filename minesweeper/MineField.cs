@@ -1,19 +1,28 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
-namespace MineSweeper;
+namespace Minesweeper;
 
 public class MineField
 {
     private Dictionary<int, List<int>> _flaggedSquares = new Dictionary<int, List<int>>();
     private Dictionary<int, List<int>> _clickedSquares = new Dictionary<int, List<int>>();
-    private int _totalSquares => Columns.Count * Rows.Count;
-    private int _totalMineSquares => MineIndexes.SelectMany(mi => mi.Value).Count();
+    private int _totalSquares => _columns.Count * _rows.Count;
+    private int _totalMineSquares => _mineIndeces.SelectMany(mi => mi.Value).Count();
     private int _winCriteria => _totalSquares - _totalMineSquares;
+    private List<MinefieldColumn> _columns { get; set; } = new List<MinefieldColumn>();
+    private List<MinefieldRow> _rows { get; set; } = new List<MinefieldRow>();
+    private Dictionary<int, List<int>> _mineIndeces { get; set; } = new Dictionary<int, List<int>>();
 
-    public List<MinefieldColumn> Columns { get; set; } = new List<MinefieldColumn>();
-    public List<MinefieldRow> Rows { get; set; } = new List<MinefieldRow>();
-    public Dictionary<int, List<int>> MineIndexes { get; set; } = new Dictionary<int, List<int>>();
+    public int ColumnCount => _columns.Count;
+    public int RowCount => _rows.Count;
+
+    public MineField(int height, int width, decimal percentMines)
+    {
+        AddColumnsAndRows(height, width);
+
+        AddMines(percentMines);
+    }
 
     public List<ClickResult> ClickSquare(string command)
     {
@@ -38,7 +47,7 @@ public class MineField
         var row = Convert.ToInt32(Regex.Match(squareCommand, "\\d+").Value) - 1;
         var column = Array.IndexOf(Constants.ALPHABET, columnAlpha.ToUpper()) + 1;
 
-        if (row >= Rows.Count || column > Columns.Count)
+        if (row >= _rows.Count || column > _columns.Count)
         {
             return null;
         }
@@ -56,6 +65,66 @@ public class MineField
         var clickResults = PerformClick(row, column);
 
         return clickResults;
+    }
+
+    public List<KeyValuePair<int, int>> GetMineIndeces()
+    {
+        var kvpList = new List<KeyValuePair<int, int>>();
+        foreach (var item in _mineIndeces)
+        {
+            foreach (var value in _mineIndeces[item.Key])
+            {
+                kvpList.Add(new KeyValuePair<int, int>(item.Key, value));
+            }
+        }
+
+        return kvpList;
+    }
+
+    private void AddColumnsAndRows(int height, int width)
+    {
+        for (var i = 0; i < width; i++)
+        {
+            _columns.Add(new MinefieldColumn(i));
+        }
+
+        for (var i = 0; i < height; i++)
+        {
+            _rows.Add(new MinefieldRow(i));
+        }
+    }
+
+    private void AddMines(decimal percentMines)
+    {
+        var numberOfMines = Math.Round(_rows.Count * _columns.Count * (percentMines / 100));
+        var random = new Random();
+
+        while (_mineIndeces.Values.SelectMany(v => v).Count() < numberOfMines)
+        {
+            var x = random.Next(0, _rows.Count);
+            var y = random.Next(1, _columns.Count + 1);
+
+            var existingX = _mineIndeces.ContainsKey(x);
+            if (!existingX)
+            {
+                _mineIndeces.Add(x, new List<int> {
+                    y
+                });
+                continue;
+            }
+            else
+            {
+                var existingList = _mineIndeces[x];
+                if (existingList.Contains(y))
+                {
+                    continue;
+                }
+                else
+                {
+                    existingList.Add(y);
+                }
+            }
+        }
     }
 
     private List<ClickResult> PerformFlag(int row, int column)
@@ -100,7 +169,7 @@ public class MineField
         var clickResult = new ClickResult();
         clickResults.Add(clickResult);
 
-        if (MineIndexes.ContainsKey(row) && MineIndexes[row].Contains(column))
+        if (_mineIndeces.ContainsKey(row) && _mineIndeces[row].Contains(column))
         {
             clickResult.WasMine = true;
         }
@@ -146,7 +215,7 @@ public class MineField
         Console.WriteLine($"Checking neighbors of [{row},{column}]");
         foreach (var rowIndex in rowsToCheck)
         {
-            if (rowIndex >= Rows.Count || rowIndex < 0)
+            if (rowIndex >= _rows.Count || rowIndex < 0)
             {
                 Console.WriteLine($"{rowIndex} isn't valid. Skipping");
                 continue;
@@ -154,7 +223,7 @@ public class MineField
             foreach (var columnIndex in columnsToCheck)
             {
                 Console.WriteLine($"Checking square [{rowIndex}, {columnIndex}]");
-                if (columnIndex > Columns.Count || columnIndex < 1
+                if (columnIndex > _columns.Count || columnIndex < 1
                     || clickResults.Any(cr => cr.XCoordinate == columnIndex && cr.YCoordinate == rowIndex))
                 {
                     continue;
@@ -172,18 +241,18 @@ public class MineField
         var neighborMines = 0;
         foreach (var rowIndex in rowsToCheck)
         {
-            if (rowIndex >= Rows.Count || rowIndex < 0)
+            if (rowIndex >= _rows.Count || rowIndex < 0)
             {
                 continue;
             }
 
             foreach (var columnIndex in columnsToCheck)
             {
-                if (columnIndex > Columns.Count || columnIndex < 1 || (rowIndex == row && columnIndex == column))
+                if (columnIndex > _columns.Count || columnIndex < 1 || (rowIndex == row && columnIndex == column))
                 {
                     continue;
                 }
-                if (MineIndexes.ContainsKey(rowIndex) && MineIndexes[rowIndex].Contains(columnIndex))
+                if (_mineIndeces.ContainsKey(rowIndex) && _mineIndeces[rowIndex].Contains(columnIndex))
                 {
                     neighborMines++;
                 }
